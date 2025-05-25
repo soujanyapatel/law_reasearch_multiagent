@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Law Research Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 95%;
+            max-width: 1400px;
+            height: 90vh;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #2c3e50 0%, #3498db 100%);
+            padding: 20px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .logo {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .upload-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 20px;
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            width: 100%;
+            transition: all 0.3s ease;
+            display: block;
+        }
+
+        .file-input-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .query-types {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .query-type-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            padding: 12px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .query-type-btn:hover,
+        .query-type-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(5px);
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .chat-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 20px 20px 5px 20px;
+            max-width: 70%;
+            margin-left: auto;
+            word-wrap: break-word;
+        }
+
+        .bot-message {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 20px 20px 20px 5px;
+            max-width: 85%;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #3498db;
+        }
+
+        .sources-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .source-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 15px;
+            border-radius: 12px;
+            border-left: 4px solid #28a745;
+            transition: transform 0.3s ease;
+        }
+
+        .source-card.contradicting {
+            border-left-color: #dc3545;
+        }
+
+        .source-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .source-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        .source-meta {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 8px;
+        }
+
+        .source-url {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .message-input:focus {
+            border-color: #3498db;
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            min-width: 80px;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .send-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .support-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .support-type-btn {
+            padding: 8px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .support-type-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .arguments-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .arguments-list li {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            border-left: 3px solid #007bff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .arguments-list li:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+
+        .file-status {
+            font-size: 12px;
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .clear-chat-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .clear-chat-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .source-count-input {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 12px;
+            border-radius: 5px;
+            width: 60px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .summary-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .summary-type-btn {
+            padding: 8px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .summary-type-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+
+
+
+        .session-section {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    margin-bottom: 10px;
+}
+
+.new-session-btn {
+    background: rgba(40, 167, 69, 0.3);
+    color: white;
+    border: 1px solid rgba(40, 167, 69, 0.5);
+    padding: 10px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+}
+
+.new-session-btn:hover {
+    background: rgba(40, 167, 69, 0.5);
+}
+
+.session-list {
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.session-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+}
+
+.session-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.session-item.active {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+        
+        .bot-message p {
+    margin-bottom: 10px;
+}
+
+.bot-message p:last-child {
+    margin-bottom: 0;
+}
+
+.bot-message code {
+    background: #f8f9fa;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.bot-message strong {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.bot-message em {
+    font-style: italic;
+    color: #495057;
+}
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+                height: 100vh;
+            }
+            
+            .sidebar {
+                padding: 15px;
+                max-height: 200px;
+            }
+            
+            .sources-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">⚖️ Law Research AI</div>
+            <div class="session-section">
+    <h3>Chat Sessions</h3>
+    <button id="newSessionBtn" class="new-session-btn">➕ New Session</button>
+    <div id="sessionList" class="session-list"></div>
+</div>
+            <div class="upload-section">
+                <h3>Upload Paper</h3>
+                <div class="file-input-wrapper">
+                    <input type="file" id="fileInput" class="file-input" accept=".pdf,.txt,.docx">
+                    <label for="fileInput" class="file-input-button">
+                        📄 Choose File
+                    </label>
+                </div>
+                <div id="fileStatus" class="file-status" style="display: none;"></div>
+            </div>
+
+            <div>
+                <h3>Query Type</h3>
+                <div class="query-types">
+                    <button class="query-type-btn active" data-type="general">💬 General Chat</button>
+                    <button class="query-type-btn" data-type="find_sources">🔍 Find Sources</button>
+                    <button class="query-type-btn" data-type="summarize">📋 Summarize Paper</button>
+                    <button class="query-type-btn" data-type="extract_arguments">🎯 Extract Arguments</button>
+                </div>
+                
+                <div id="supportTypeSelector" class="support-type-selector" style="display: none; margin-top: 15px;">
+                    <button class="support-type-btn active" data-support="both">Both</button>
+                    <button class="support-type-btn" data-support="supporting">Supporting</button>
+                    <button class="support-type-btn" data-support="contradicting">Contradicting</button>
+                </div>
+
+                <div id="sourceCountSection" style="display: none; margin-top: 10px;">
+                    <label style="font-size: 12px; color: rgba(255, 255, 255, 0.8);">Source Count:</label>
+                    <input type="number" id="sourceCountInput" class="source-count-input" value="5" min="1" max="20">
+                </div>
+
+                <div id="summaryTypeSelector" class="summary-type-selector" style="display: none; margin-top: 15px;">
+                    <button class="summary-type-btn active" data-summary="comprehensive">Comprehensive</button>
+                    <button class="summary-type-btn" data-summary="brief">Brief</button>
+                </div>
+
+                <button id="clearChat" class="clear-chat-btn">🗑️ Clear Chat</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="chat-area" id="chatArea"></div>
+            
+            <div class="input-area">
+                <input type="text" id="messageInput" class="message-input" placeholder="Ask about legal arguments, request sources, or summarize papers...">
+                <button id="sendBtn" class="send-btn">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class LawResearchApp {
+            // constructor() {
+            //     this.sessionId = this.generateSessionId();
+            //     this.currentQueryType = 'general';
+            //     this.currentSupportType = 'both';
+            //     this.currentSummaryType = 'comprehensive';
+            //     this.currentSourceCount = 5;
+            //     this.apiUrl = 'http://localhost:5000/api';
+            //     this.isLoading = false;
+            //     this.chatHistoryLoaded = false;
+            //     this.init();
+            // }
+            constructor() {
+    this.sessionId = this.generateSessionId();
+    this.currentQueryType = 'general';
+    this.currentSupportType = 'both';
+    this.currentSummaryType = 'comprehensive';
+    this.currentSourceCount = 5;
+    this.apiUrl = 'http://localhost:5000/api';
+    this.isLoading = false;
+    this.chatHistoryLoaded = false;
+    this.sessions = []; // Add this line
+    this.init();
+}
+
+            generateSessionId() {
+                return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            }
+
+            // async init() {
+            //     await this.initSession();
+            //     this.setupEventListeners();
+            //     this.loadChatHistory();
+            // }
+
+            async init() {
+    await this.loadSessions();
+    await this.initSession();
+    this.setupEventListeners();
+    this.loadChatHistory();
+}
+
+            async initSession() {
+                try {
+                    const response = await fetch(`${this.apiUrl}/init_session`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username: 'law_student',
+                            session_id: this.sessionId
+                        })
+                    });
+                    const data = await response.json();
+                    console.log('Session initialized:', data);
+                } catch (error) {
+                    console.error('Failed to initialize session:', error);
+                    this.showError('Failed to initialize session. Please refresh the page.');
+                }
+            }
+
+            setupEventListeners() {
+                document.getElementById('newSessionBtn').addEventListener('click', () => this.createNewSession());
+                document.getElementById('fileInput').addEventListener('change', (e) => this.handleFileUpload(e));
+                document.getElementById('sendBtn').addEventListener('click', () => this.sendMessage());
+                document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                document.querySelectorAll('.query-type-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.setQueryType(e.target.dataset.type));
+                });
+
+                document.querySelectorAll('.support-type-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.setSupportType(e.target.dataset.support));
+                });
+
+                document.querySelectorAll('.summary-type-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => this.setSummaryType(e.target.dataset.summary));
+                });
+
+                document.getElementById('sourceCountInput').addEventListener('change', (e) => {
+                    this.currentSourceCount = parseInt(e.target.value) || 5;
+                });
+
+                document.getElementById('clearChat').addEventListener('click', () => this.clearChat());
+            }
+
+            setQueryType(type) {
+                this.currentQueryType = type;
+                document.querySelectorAll('.query-type-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelector(`[data-type="${type}"]`).classList.add('active');
+                
+                const supportSelector = document.getElementById('supportTypeSelector');
+                const sourceCountSection = document.getElementById('sourceCountSection');
+                const summarySelector = document.getElementById('summaryTypeSelector');
+                
+                supportSelector.style.display = type === 'find_sources' ? 'flex' : 'none';
+                sourceCountSection.style.display = type === 'find_sources' ? 'block' : 'none';
+                summarySelector.style.display = type === 'summarize' ? 'flex' : 'none';
+
+                const input = document.getElementById('messageInput');
+                switch(type) {
+                    case 'find_sources':
+                        input.placeholder = 'Enter your legal argument to find supporting/contradicting sources...';
+                        break;
+                    case 'summarize':
+                        input.placeholder = 'Ask to summarize the uploaded paper...';
+                        break;
+                    case 'extract_arguments':
+                        input.placeholder = 'Ask to extract arguments from the uploaded paper...';
+                        break;
+                    default:
+                        input.placeholder = 'Ask about legal arguments, request sources, or summarize papers...';
+                }
+            }
+
+            setSupportType(type) {
+                this.currentSupportType = type;
+                document.querySelectorAll('.support-type-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelector(`[data-support="${type}"]`).classList.add('active');
+            }
+
+            setSummaryType(type) {
+                this.currentSummaryType = type;
+                document.querySelectorAll('.summary-type-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelector(`[data-summary="${type}"]`).classList.add('active');
+            }
+
+            clearChat() {
+                const chatArea = document.getElementById('chatArea');
+                chatArea.innerHTML = '';
+                this.chatHistoryLoaded = false;
+            }
+
+            async loadChatHistory() {
+                if (this.chatHistoryLoaded) return;
+                
+                try {
+                    const response = await fetch(`${this.apiUrl}/chat_history?session_id=${this.sessionId}`);
+                    const data = await response.json();
+                    
+                    if (data.history && data.history.length > 0) {
+                        const chatArea = document.getElementById('chatArea');
+                        chatArea.innerHTML = '';
+                        
+                        data.history.forEach(message => {
+                            if (message.type === 'user') {
+                                this.addMessage('user', message.message);
+                            } else if (message.type === 'bot') {
+                                if (message.data) {
+                                    this.handleBotResponse(message.data);
+                                } else {
+                                    this.addMessage('bot', message.message);
+                                }
+                            }
+                        });
+                    }
+                    
+                    this.chatHistoryLoaded = true;
+                } catch (error) {
+                    console.error('Failed to load chat history:', error);
+                }
+            }
+
+            async handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('session_id', this.sessionId);
+
+                const statusDiv = document.getElementById('fileStatus');
+                statusDiv.style.display = 'block';
+                statusDiv.innerHTML = '📤 Uploading...';
+
+                try {
+                    const response = await fetch(`${this.apiUrl}/upload_paper`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        statusDiv.innerHTML = `❌ ${data.error}`;
+                        statusDiv.style.background = 'rgba(220, 53, 69, 0.2)';
+                    } else {
+                        statusDiv.innerHTML = `✅ ${data.filename} uploaded`;
+                        statusDiv.style.background = 'rgba(40, 167, 69, 0.2)';
+                    }
+                } catch (error) {
+                    statusDiv.innerHTML = `❌ Upload failed: ${error.message}`;
+                    statusDiv.style.background = 'rgba(220, 53, 69, 0.2)';
+                }
+            }
+
+            async sendMessage() {
+                if (this.isLoading) return;
+
+                const input = document.getElementById('messageInput');
+                const message = input.value.trim();
+                if (!message) return;
+
+                this.isLoading = true;
+                const sendBtn = document.getElementById('sendBtn');
+                const originalText = sendBtn.innerHTML;
+                sendBtn.disabled = true;
+                sendBtn.innerHTML = '<div class="spinner"></div>';
+
+                this.addMessage('user', message);
+                input.value = '';
+
+                try {
+                    const payload = {
+                        message: message,
+                        session_id: this.sessionId,
+                        type: this.currentQueryType
+                    };
+
+                    if (this.currentQueryType === 'find_sources') {
+                        payload.support_type = this.currentSupportType;
+                        payload.source_count = this.currentSourceCount;
+                    }
+
+                    if (this.currentQueryType === 'summarize') {
+                        payload.summary_type = this.currentSummaryType;
+                    }
+
+                    const response = await fetch(`${this.apiUrl}/chat`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    this.handleBotResponse(data);
+
+                } catch (error) {
+                    console.error('Chat error:', error);
+                    this.addMessage('bot', `❌ Error: ${error.message}`);
+                }
+
+                this.isLoading = false;
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = originalText;
+            }
+
+            async loadSessions() {
+    try {
+        const response = await fetch(`${this.apiUrl}/get_sessions?username=law_student`);
+        const data = await response.json();
+        this.sessions = data.sessions || [];
+        this.renderSessions();
+    } catch (error) {
+        console.error('Failed to load sessions:', error);
+    }
+}
+
+renderSessions() {
+    const sessionList = document.getElementById('sessionList');
+    sessionList.innerHTML = '';
+    
+    this.sessions.forEach(session => {
+        const sessionItem = document.createElement('div');
+        sessionItem.className = `session-item ${session.session_id === this.sessionId ? 'active' : ''}`;
+        sessionItem.innerHTML = `
+            <div style="font-weight: bold;">${session.session_name}</div>
+            <div style="font-size: 10px; opacity: 0.8;">${new Date(session.created_at).toLocaleDateString()}</div>
+        `;
+        sessionItem.onclick = () => this.switchSession(session.session_id);
+        sessionList.appendChild(sessionItem);
+    });
+}
+
+async switchSession(sessionId) {
+    this.sessionId = sessionId;
+    this.chatHistoryLoaded = false;
+    document.getElementById('chatArea').innerHTML = '';
+    this.renderSessions();
+    await this.loadChatHistory();
+}
+
+async createNewSession() {
+    this.sessionId = this.generateSessionId();
+    await this.initSession();
+    await this.loadSessions();
+    this.chatHistoryLoaded = false;
+    document.getElementById('chatArea').innerHTML = '';
+}
+
+            addMessage(type, content) {
+                const chatArea = document.getElementById('chatArea');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+
+                // if (type === 'user') {
+                //     messageDiv.innerHTML = `<div class="user-message">${this.escapeHtml(content)}</div>`;
+                // } else {
+                //     messageDiv.innerHTML = `<div class="bot-message">${content}</div>`;
+                // }
+                if (type === 'user') {
+    messageDiv.innerHTML = `<div class="user-message">${this.escapeHtml(content)}</div>`;
+} else {
+    // For bot messages, don't escape HTML since it should contain formatting
+    messageDiv.innerHTML = `<div class="bot-message">${content}</div>`;
+}
+
+                chatArea.appendChild(messageDiv);
+                
+                requestAnimationFrame(() => {
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                });
+            }
+
+            showError(message) {
+                this.addMessage('bot', `❌ ${message}`);
+            }
+
+            handleBotResponse(data) {
+                if (data.error) {
+                    this.showError(data.error);
+                    return;
+                }
+
+                switch (data.type) {
+                    case 'sources':
+                        this.renderSources(data);
+                        break;
+                    case 'summary':
+    this.addMessage('bot', `<h3>📋 Paper Summary</h3>${this.formatMessage(data.summary)}`);
+    break;
+                    case 'arguments':
+                        this.renderArguments(data.arguments);
+                        break;
+                    case 'general':
+    this.addMessage('bot', this.formatMessage(data.message));
+    break;
+                    default:
+                        this.addMessage('bot', this.escapeHtml(JSON.stringify(data, null, 2)));
+                }
+            }
+
+            // formatMessage(message) {
+            //     return this.escapeHtml(message).replace(/\n/g, '<br>');
+            // }
+            formatMessage(message) {
+    // First convert markdown-style formatting to HTML
+    let formatted = message
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // **bold**
+        .replace(/\*(.*?)\*/g, '<em>$1</em>') // *italic*
+        .replace(/`(.*?)`/g, '<code>$1</code>') // `code`
+        .replace(/\n\n/g, '</p><p>') // Double newlines = new paragraphs
+        .replace(/\n/g, '<br>'); // Single newlines = line breaks
+    
+    // Wrap in paragraph tags if not already wrapped
+    if (!formatted.startsWith('<p>') && !formatted.startsWith('<h')) {
+        formatted = '<p>' + formatted + '</p>';
+    }
+    
+    return formatted;
+}
+
+            renderSources(data) {
+                let html = `<h3>🔍 Research Sources</h3>${this.formatMessage(data.message)}`;
+                
+                if (data.sources.supporting && data.sources.supporting.length > 0) {
+                    html += '<h4 style="color: #28a745; margin-top: 20px;">✅ Supporting Sources</h4>';
+                    html += '<div class="sources-container">';
+                    data.sources.supporting.forEach(source => {
+                        html += this.renderSourceCard(source, 'supporting');
+                    });
+                    html += '</div>';
+                }
+
+                if (data.sources.contradicting && data.sources.contradicting.length > 0) {
+                    html += '<h4 style="color: #dc3545; margin-top: 20px;">❌ Contradicting Sources</h4>';
+                    html += '<div class="sources-container">';
+                    data.sources.contradicting.forEach(source => {
+                        html += this.renderSourceCard(source, 'contradicting');
+                    });
+                    html += '</div>';
+                }
+
+                this.addMessage('bot', html);
+            }
+
+            renderSourceCard(source, type) {
+                const authors = Array.isArray(source.authors) ? source.authors.join(', ') : (source.authors || 'Unknown');
+                const issn = Array.isArray(source.issn) ? source.issn.join(', ') : (source.issn || 'N/A');
+                
+                return `
+                    <div class="source-card ${type}">
+                        <div class="source-title">${this.escapeHtml(source.title || 'Untitled')}</div>
+                        <div class="source-meta">
+                            <strong>Authors:</strong> ${this.escapeHtml(authors)}<br>
+                            <strong>Journal:</strong> ${this.escapeHtml(source.journal || 'N/A')}<br>
+                            <strong>Year:</strong> ${source.year || 'N/A'}<br>
+                            <strong>ISSN:</strong> ${issn}<br>
+                            ${source.doi ? `<strong>DOI:</strong> ${this.escapeHtml(source.doi)}<br>` : ''}
+                        </div>
+                        ${source.abstract ? `<p style="font-size: 12px; margin-top: 8px;">${this.escapeHtml(source.abstract.substring(0, 200))}...</p>` : ''}
+                        ${source.url ? `<a href="${source.url}" target="_blank" class="source-url">View Source</a>` : ''}
+                    </div>
+                `;
+            }
+
+            renderArguments(argumentsList) {
+                let html = '<h3>🎯 Extracted Arguments</h3>';
+                
+                if (Array.isArray(argumentsList) && argumentsList.length > 0) {
+                    html += '<ul class="arguments-list">';
+                    argumentsList.forEach((arg, index) => {
+                        const escapedArg = this.escapeHtml(arg);
+                        html += `<li onclick="app.searchArgument('${escapedArg.replace(/'/g, '&#39;')}')">${escapedArg}</li>`;
+                    });
+                    html += '</ul>';
+                    html += '<p style="font-size: 12px; color: #6c757d; margin-top: 10px;">💡 Click on any argument to find supporting/contradicting sources</p>';
+                } else {
+                    html += '<p>No arguments could be extracted from the paper.</p>';
+                }
+
+                this.addMessage('bot', html);
+            }
+
+            searchArgument(argument) {
+                document.getElementById('messageInput').value = argument;
+                this.setQueryType('find_sources');
+            }
+
+            escapeHtml(text) {
+                if (typeof text !== 'string') {
+                    return String(text);
+                }
+                const map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+                return text.replace(/[&<>"']/g, m => map[m]);
+            }
+        }
+
+        let app;
+        document.addEventListener('DOMContentLoaded', () => {
+            app = new LawResearchApp();
+        });
+    </script>
+</body>
+</html>
+
+
